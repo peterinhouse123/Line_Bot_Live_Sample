@@ -3,22 +3,31 @@ from Module import Browser as Browser_Module
 
 from selenium.webdriver.common.keys import Keys
 import time
+import json
 class Line:
-    def __init__(self):
+    def __init__(self,parse_dir="../"):
         self.Browser_fn = Browser_Module.Browser()
-        self.Driver = self.Browser_fn.Init_Browser("../")
+        self.parse_dir = parse_dir
+        self.Driver = None
         self.Friend_List = []
 
+        self.WS_Login_Success_Callback = None
 
-    def Start_Line(self):
+
+    def Start_Line(self,client=None,account_pack=None):
+        # account_pack = json.loads(account_pack)
+        account = account_pack['account']
+        password = account_pack['password']
+
+        self.Driver = self.Browser_fn.Init_Browser(self.parse_dir)
         self.Driver.get("chrome-extension://ophjlpahpchlmihnnnihgmmeilfjmjjc/index.html")
 
         time.sleep(1)
         email_input = self.Driver.find_element_by_css_selector("#line_login_email")
-        email_input.send_keys("johnplugintw@gmail.com")
+        email_input.send_keys(account)
 
         pwd_input = self.Driver.find_element_by_css_selector("#line_login_pwd")
-        pwd_input.send_keys("Aa123456")
+        pwd_input.send_keys(password)
 
         login_btn = self.Driver.find_element_by_css_selector("#login_btn")
         login_btn.click()
@@ -27,6 +36,8 @@ class Line:
         self.Check_Mobile_Captcha_Screen()
         print("驗証碼通過了哦")
         time.sleep(3)
+        if self.WS_Login_Success_Callback != None:
+            self.WS_Login_Success_Callback(client)
 
         self.Get_Friend_List()
         self.Send_Mesg_To_Friend(mid="u46710a7f314832fce484bf63bd0eaf4f",msg_body="hello")
@@ -48,7 +59,7 @@ class Line:
         Friends_btn.click()
         # time.sleep(1)
 
-    def Get_Friend_List(self):
+    def Get_Friend_List(self,no_ele=0):
 
         Friend_list = self.Driver.find_elements_by_css_selector(".mdMN02Li")
 
@@ -57,12 +68,13 @@ class Line:
         for ele in Friend_list:
             name = ele.find_element_by_css_selector(".mdCMN04Ttl").text
             pack = {}
-            pack['ele'] = ele
+            if no_ele == 0:
+                pack['ele'] = ele
             pack['name'] = name
             pack['mid'] = ele.get_attribute("data-mid")
             end.append(pack)
         self.Friend_List = end
-        # print(end)
+
         return end
 
 
